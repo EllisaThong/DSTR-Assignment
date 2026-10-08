@@ -8,6 +8,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <chrono>
+#include <climits>
+#include <cmath>
 
 using namespace std;
 
@@ -106,6 +108,37 @@ public:
     }
 };
 
+// Removes spaces and tabs at both ends of a CSV field
+inline string trimField(const string& s) {
+    size_t start = 0, end = s.size();
+    while (start < end && (s[start] == ' ' || s[start] == '\t')) start++;
+    while (end > start && (s[end - 1] == ' ' || s[end - 1] == '\t')) end--;
+    return s.substr(start, end - start);
+}
+
+// The WHOLE field must be a whole number (e.g. "42"). Text such as "abc",
+// "1x2" or "2.5" is rejected instead of being silently turned into 0 / 1 / 2.
+inline bool parseIntField(const string& s, int& out) {
+    if (s.empty()) return false;
+    char* end = NULL;
+    long value = strtol(s.c_str(), &end, 10);
+    if (end == s.c_str() || *end != '\0') return false;   // not fully numeric
+    if (value < INT_MIN || value > INT_MAX) return false;
+    out = (int)value;
+    return true;
+}
+
+// The WHOLE field must be a valid finite number (e.g. "150.0").
+inline bool parseDoubleField(const string& s, double& out) {
+    if (s.empty()) return false;
+    char* end = NULL;
+    double value = strtod(s.c_str(), &end);
+    if (end == s.c_str() || *end != '\0') return false;   // not fully numeric
+    if (!std::isfinite(value)) return false;               // rejects inf / nan
+    out = value;
+    return true;
+}
+
 inline bool parsePatientLine(const string& rawLine, Patient& out) {
     string line = rawLine;
     while (!line.empty() && (line[line.size() - 1] == '\r' || line[line.size() - 1] == '\n'))
@@ -122,17 +155,32 @@ inline bool parsePatientLine(const string& rawLine, Patient& out) {
         }
     }
     if (f != 5) return false;
-    for (int i = 0; i < 6; i++) if (field[i].empty()) return false;
+    for (int i = 0; i < 6; i++) {
+        field[i] = trimField(field[i]);
+        if (field[i].empty()) return false;
+    }
+
+    // Parse into temporary variables first, so a bad row never half-fills 'out'
+    int age, visits;
+    double stay, rate;
+    if (!parseIntField(field[1], age))     return false;
+    if (!parseDoubleField(field[3], stay)) return false;
+    if (!parseDoubleField(field[4], rate)) return false;
+    if (!parseIntField(field[5], visits))  return false;
+
+    // Values must make sense: age 0-100 (the age groups in the brief), no negatives
+    if (age < 0 || age > 100) return false;
+    if (stay < 0 || rate < 0 || visits < 0) return false;
 
     strncpy(out.patientID, field[0].c_str(), ID_LEN - 1);
     out.patientID[ID_LEN - 1] = '\0';
     strncpy(out.careType, field[2].c_str(), CARE_LEN - 1);
     out.careType[CARE_LEN - 1] = '\0';
 
-    out.age               = atoi(field[1].c_str());
-    out.lengthOfStay      = atof(field[3].c_str());
-    out.baseCostPerHour   = atof(field[4].c_str());
-    out.daysVisitsPerYear = atoi(field[5].c_str());
+    out.age               = age;
+    out.lengthOfStay      = stay;
+    out.baseCostPerHour   = rate;
+    out.daysVisitsPerYear = visits;
     return true;
 }
 
