@@ -17,7 +17,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
-#include <cctype>
+#include <string>
 #include "common.hpp"
 #include "PatientList.hpp"
 
@@ -650,25 +650,24 @@ inline void displayClinicalInsightsReportList(const PatientList& a, const Patien
 // Menu for Task 5 & Task 9  (called from main menu option [3])
 //
 //   [1] Healthcare Expenditure & Service Analysis
-//         [a] Total medical billing cost per dataset        (Task 5a)
-//         [b] Total medical cost grouped by care type       (Task 5b)
-//         [c] Expenditure & visit duration comparison       (Task 5c)
-//         [d] Back
+//         [1] Total medical billing cost per dataset        (Task 5a)
+//         [2] Total medical cost grouped by care type       (Task 5b)
+//         [3] Expenditure & visit duration comparison       (Task 5c)
+//         [0] Back
 //   [2] Clinical Insights and Recommendations               (Task 9)
 //   [0] Back to main menu
 // ============================================================================
 
-// Reads one letter (e.g. "a" or "B") and returns it in lower case.
-// Returns '?' for invalid input and 'd' (back) if input has ended.
+// Returns '?' for invalid input and '0' (back) if input has ended.
 inline char lstReadLetter() {
     string line;
-    if (!getline(cin, line)) return 'd';
+    if (!getline(cin, line)) return '0';
 
     char found = '?';
     int  letters = 0;
     for (size_t i = 0; i < line.size(); i++) {
         if (line[i] == ' ' || line[i] == '\t' || line[i] == '\r') continue;
-        found = (char)tolower((unsigned char)line[i]);
+        found = line[i];
         letters++;
     }
     return (letters == 1) ? found : '?';
@@ -733,12 +732,11 @@ inline void lstRunServiceAnalysisMenu(const PatientList* const datasets[NUM_DATA
             waitForEnter();
             break;
         case '0':
-        case '4':
             break;
         default:
             cout << "\nInvalid choice, please enter 1~3 or 0.\n";
         }
-    } while (choice != '4' && choice != '0');
+    } while (choice != '0');
 }
 
 inline void lstRunServiceAnalysisMenu(const PatientList datasets[NUM_DATASETS]) {
