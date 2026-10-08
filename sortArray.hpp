@@ -160,7 +160,9 @@ inline ArraySortResult runArraySort(PatientArray& source, int algorithm, int key
 }
 
 inline void printArraySortHeader() {
-    printLine(110);
+    cout << "Est. = Estimated. Benchmark copies and allocation overhead are excluded.\n"
+         << "Extra Mem counts temporary Patient storage; recursion is excluded.\n";
+    printLine(116);
     cout << left << setw(10) << "Structure"
          << setw(10) << "Algorithm"
          << setw(16) << "Sort Key"
@@ -168,9 +170,9 @@ inline void printArraySortHeader() {
          << setw(14) << "Comparisons"
          << setw(14) << "Swaps/Moves"
          << setw(12) << "Data Mem"
-         << setw(12) << "Extra Mem"
+         << setw(18) << "Extra Mem (Est.)"
          << setw(8)  << "Sorted?" << "\n";
-    printLine(110);
+    printLine(116);
 }
 
 inline void printArraySortRow(const char* algoName, int key, const ArraySortResult& r,
@@ -183,7 +185,7 @@ inline void printArraySortRow(const char* algoName, int key, const ArraySortResu
          << setw(14) << r.comparisons
          << setw(14) << r.swapsOrMoves
          << setw(12) << formatBytes(dataMemory)
-         << setw(12) << formatBytes(r.extraMemory)
+         << setw(18) << formatBytes(r.extraMemory)
          << setw(8)  << (r.sorted ? "YES" : "NO") << "\n";
 }
 
@@ -231,6 +233,14 @@ inline void arrayViewAllSortedRecords(const PatientArray& source, int algorithm,
     }
 }
 
+inline void arrayCombineDatasets(const PatientArray datasets[], PatientArray& combined) {
+    combined.clear();
+    for (int d = 0; d < NUM_DATASETS; d++) {
+        for (int i = 0; i < datasets[d].size(); i++)
+            combined.insertAtEnd(datasets[d][i]);
+    }
+}
+
 inline void arraySortingMenu(PatientArray datasets[]) {
     int choice;
     do {
@@ -241,7 +251,7 @@ inline void arraySortingMenu(PatientArray datasets[]) {
         cout << "  1. Bubble Sort (show before/after)\n"
              << "  2. Merge Sort (show before/after)\n"
              << "  3. Compare Bubble Sort vs Merge Sort\n"
-             << "  4. Full benchmark (all datasets, all keys)\n"
+             << "  4. Full benchmark (facilities + combined)\n"
              << "  0. Back\n";
         printLine(50, '=');
         choice = arrayReadSortingChoice(4);
@@ -253,8 +263,13 @@ inline void arraySortingMenu(PatientArray datasets[]) {
             cout << "\nSelect dataset:\n";
             for (int d = 0; d < NUM_DATASETS; d++)
                 cout << "  " << (d + 1) << ". " << DATASET_NAMES[d] << "\n";
+            int combinedCount = 0;
+            for (int d = 0; d < NUM_DATASETS; d++)
+                combinedCount += datasets[d].size();
+            cout << "  " << (NUM_DATASETS + 1) << ". All facilities combined ("
+                 << combinedCount << " records)\n";
             cout << "  0. Back\n";
-            int d = arrayReadSortingChoice(NUM_DATASETS);
+            int d = arrayReadSortingChoice(NUM_DATASETS + 1);
             if (d == 0) continue;
 
             cout << "\nSelect sorting criterion:\n"
@@ -272,7 +287,12 @@ inline void arraySortingMenu(PatientArray datasets[]) {
             int order = arrayReadSortingChoice(2);
             if (order == 0) continue;
             bool asc = (order == 1);
-            PatientArray& data = datasets[d - 1];
+            PatientArray combined;
+            if (d == NUM_DATASETS + 1) arrayCombineDatasets(datasets, combined);
+            PatientArray& data = (d == NUM_DATASETS + 1) ? combined : datasets[d - 1];
+            const char* datasetName = (d == NUM_DATASETS + 1)
+                ? "All facilities combined" : DATASET_NAMES[d - 1];
+            cout << "\nDataset: " << datasetName << " (" << data.size() << " records)\n";
 
             if (choice == 1 || choice == 2) {
                 ArraySortResult r = runArraySort(data, choice, key, asc, true);
@@ -280,18 +300,18 @@ inline void arraySortingMenu(PatientArray datasets[]) {
                 printArraySortHeader();
                 printArraySortRow(choice == 1 ? "Bubble" : "Merge", key, r,
                                   data.memoryBytes());
-                printLine(110);
+                printLine(116);
                 arrayViewAllSortedRecords(data, choice, key, asc);
                 continue;
             } else {
                 ArraySortResult b = runArraySort(data, 1, key, asc, false);
                 ArraySortResult m = runArraySort(data, 2, key, asc, false);
-                cout << "\nBUBBLE vs MERGE on " << DATASET_NAMES[d - 1]
+                cout << "\nBUBBLE vs MERGE on " << datasetName
                      << " (average of " << SORT_REPEAT << " runs)\n";
                 printArraySortHeader();
                 printArraySortRow("Bubble", key, b, data.memoryBytes());
                 printArraySortRow("Merge",  key, m, data.memoryBytes());
-                printLine(110);
+                printLine(116);
                 printSpeedup(b, m);
             }
             break;
@@ -300,16 +320,21 @@ inline void arraySortingMenu(PatientArray datasets[]) {
             cout << "\nFULL BENCHMARK [ARRAY] (ascending, average of "
                  << SORT_REPEAT << " runs)\n";
             printArraySortHeader();
-            for (int d = 0; d < NUM_DATASETS; d++) {
-                cout << DATASET_NAMES[d] << "\n";
+            PatientArray combined;
+            arrayCombineDatasets(datasets, combined);
+            for (int d = 0; d <= NUM_DATASETS; d++) {
+                PatientArray& data = (d == NUM_DATASETS) ? combined : datasets[d];
+                const char* datasetName = (d == NUM_DATASETS)
+                    ? "All facilities combined" : DATASET_NAMES[d];
+                cout << datasetName << " (" << data.size() << " records)\n";
                 for (int key = 1; key <= 3; key++) {
-                    ArraySortResult b = runArraySort(datasets[d], 1, key, true, false);
-                    ArraySortResult m = runArraySort(datasets[d], 2, key, true, false);
-                    printArraySortRow("Bubble", key, b, datasets[d].memoryBytes());
-                    printArraySortRow("Merge",  key, m, datasets[d].memoryBytes());
+                    ArraySortResult b = runArraySort(data, 1, key, true, false);
+                    ArraySortResult m = runArraySort(data, 2, key, true, false);
+                    printArraySortRow("Bubble", key, b, data.memoryBytes());
+                    printArraySortRow("Merge",  key, m, data.memoryBytes());
                 }
             }
-            printLine(110);
+            printLine(116);
             break;
         }
         case 0:
