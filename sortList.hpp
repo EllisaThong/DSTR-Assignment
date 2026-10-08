@@ -1,30 +1,17 @@
 #ifndef SORT_LIST_HPP
 #define SORT_LIST_HPP
 
-// ============================================================================
-// Sort_List.hpp  -  Member 4, Task 6: Sorting experiments (LINKED LIST version)
-//
 // Algorithm 1: Bubble Sort  O(n^2)
-//   Same idea as the array (Ch 8): walk with current / current->next and
-//   swap the DATA (info) inside the two nodes. The links do not change.
-//
-// Algorithm 2: Merge Sort   O(n log n)   <-- creativity point
-//   Split the list in half with a slow/fast pointer, sort each half, then
-//   merge by RE-LINKING the next pointers. No data is copied and no extra
-//   array is needed, which is why merge sort suits linked lists so well.
-//
+// Algorithm 2: Merge Sort   O(n log n)
 // Sort keys: 1 = Age, 2 = Length of Stay, 3 = Total Medical Cost
-// ============================================================================
 
 #include "PatientList.hpp"
 
 using namespace std;
 
-const int SORT_REPEAT = 250;   // average many runs so the timer does not show 0
+const int SORT_REPEAT = 250;
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 inline double getSortValue(const Patient& p, int key) {
     if (key == 1) return p.age;
     if (key == 2) return p.lengthOfStay;
@@ -42,9 +29,7 @@ inline bool isWrongOrder(const Patient& a, const Patient& b, int key, bool ascen
     return getSortValue(a, key) < getSortValue(b, key);
 }
 
-// ---------------------------------------------------------------------------
-// Bubble Sort on the linked list (swap info fields)
-// ---------------------------------------------------------------------------
+// Bubble Sort
 inline void listBubbleSort(PatientList& list, int key, bool ascending,
                            long& comparisons, long& swaps) {
     int n = list.size();
@@ -54,7 +39,7 @@ inline void listBubbleSort(PatientList& list, int key, bool ascending,
         for (int i = 0; i < n - 1 - pass; i++) {
             comparisons++;
             if (isWrongOrder(current->data, current->next->data, key, ascending)) {
-                Patient temp = current->data;          // swap the info only
+                Patient temp = current->data;
                 current->data = current->next->data;
                 current->next->data = temp;
                 swaps++;
@@ -62,58 +47,52 @@ inline void listBubbleSort(PatientList& list, int key, bool ascending,
             }
             current = current->next;
         }
-        if (!swapped) break;    // already sorted -> stop early
+        if (!swapped) break;
     }
 }
 
-// ---------------------------------------------------------------------------
-// Merge Sort on the linked list (re-link nodes)
-// ---------------------------------------------------------------------------
+// Merge Sort
 
-// Cut the list into two halves. Returns the head of the second half.
-// slow moves 1 step, fast moves 2 steps -> slow stops in the middle.
 inline PatientNode* splitList(PatientNode* head) {
     PatientNode* slow = head;
     PatientNode* fast = head->next;
-    while (fast != NULL && fast->next != NULL) {
+    while (fast != nullptr && fast->next != nullptr) {
         slow = slow->next;
         fast = fast->next->next;
     }
     PatientNode* secondHalf = slow->next;
-    slow->next = NULL;              // cut the link between the halves
+    slow->next = nullptr;
     return secondHalf;
 }
 
-// Join two sorted lists into one sorted list by changing next pointers
 inline PatientNode* mergeLists(PatientNode* a, PatientNode* b, int key, bool ascending,
                                long& comparisons, long& relinks) {
-    PatientNode* newHead = NULL;
-    PatientNode* newTail = NULL;
+    PatientNode* newHead = nullptr;
+    PatientNode* newTail = nullptr;
 
-    while (a != NULL && b != NULL) {
+    while (a != nullptr && b != nullptr) {
         comparisons++;
         PatientNode* smaller;
-        if (!isWrongOrder(a->data, b->data, key, ascending)) {  // stable
+        if (!isWrongOrder(a->data, b->data, key, ascending)) {
             smaller = a;
             a = a->next;
         } else {
             smaller = b;
             b = b->next;
         }
-        if (newHead == NULL) newHead = smaller;   // first node
-        else newTail->next = smaller;             // attach to the end
+        if (newHead == nullptr) newHead = smaller;
+        else newTail->next = smaller;
         newTail = smaller;
         relinks++;
     }
-    // attach whatever is left (already sorted)
-    if (a != NULL) newTail->next = a;
-    if (b != NULL) newTail->next = b;
+    if (a != nullptr) newTail->next = a;
+    if (b != nullptr) newTail->next = b;
     return newHead;
 }
 
 inline PatientNode* listMergeSortRec(PatientNode* head, int key, bool ascending,
                                      long& comparisons, long& relinks) {
-    if (head == NULL || head->next == NULL) return head;   // 0 or 1 node
+    if (head == nullptr || head->next == nullptr) return head;
     PatientNode* second = splitList(head);
     head   = listMergeSortRec(head,   key, ascending, comparisons, relinks);
     second = listMergeSortRec(second, key, ascending, comparisons, relinks);
@@ -125,14 +104,12 @@ inline void listMergeSort(PatientList& list, int key, bool ascending,
     if (list.size() < 2) return;
     PatientNode* newHead = listMergeSortRec(list.getHead(), key, ascending,
                                             comparisons, relinks);
-    list.setHead(newHead);     // update head and tail after re-linking
+    list.setHead(newHead);
 }
 
-// ---------------------------------------------------------------------------
 // Checking and displaying
-// ---------------------------------------------------------------------------
 inline bool listIsSorted(const PatientList& list, int key, bool ascending) {
-    for (PatientNode* cur = list.getHead(); cur != NULL && cur->next != NULL;
+    for (PatientNode* cur = list.getHead(); cur != nullptr && cur->next != nullptr;
          cur = cur->next)
         if (isWrongOrder(cur->data, cur->next->data, key, ascending)) return false;
     return true;
@@ -141,7 +118,7 @@ inline bool listIsSorted(const PatientList& list, int key, bool ascending) {
 inline void listShowFirst(const PatientList& list, int rows) {
     printPatientTableHeader();
     int i = 0;
-    for (PatientNode* cur = list.getHead(); cur != NULL && i < rows; cur = cur->next) {
+    for (PatientNode* cur = list.getHead(); cur != nullptr && i < rows; cur = cur->next) {
         i++;
         printPatientRow(i, cur->data);
     }
@@ -165,8 +142,7 @@ inline ListSortResult runListSort(PatientList& source, int algorithm, int key,
     r.swapsOrLinks = 0;
     r.sorted = true;
 
-    // Copies are made BEFORE timing (the pointer array only holds the copies;
-    // every patient record is still stored inside linked-list nodes)
+    // Copy before timing.
     PatientList* copies[SORT_REPEAT];
     for (int i = 0; i < SORT_REPEAT; i++) copies[i] = source.clone();
 
@@ -194,8 +170,6 @@ inline ListSortResult runListSort(PatientList& source, int algorithm, int key,
         listShowFirst(*copies[0], 10);
     }
 
-    // Bubble: one temp Patient. Merge: no extra nodes, only a few pointers
-    // per recursive call (about log2(n) calls deep).
     if (algorithm == 1) r.extraMemory = sizeof(Patient);
     else {
         int depth = 0;
@@ -243,32 +217,83 @@ inline void printSpeedup(const ListSortResult& bubble, const ListSortResult& mer
              << " fewer comparisons than Bubble Sort.\n";
 }
 
-// ---------------------------------------------------------------------------
-// Menu (called from ListProgram.cpp)
-// ---------------------------------------------------------------------------
+// Menu
+inline int listReadSortingChoice(int maxChoice) {
+    while (true) {
+        cout << "Enter choice: ";
+        int choice = readInt();
+        if (choice >= 0 && choice <= maxChoice) return choice;
+        cout << "\nInvalid choice, please enter 0-" << maxChoice << ".\n";
+    }
+}
+
+inline void listViewAllSortedRecords(const PatientList& source, int algorithm,
+                                    int key, bool ascending) {
+    cout << "\n  1. View all sorted records (20 per page)\n"
+         << "  0. Back\n";
+    int choice = listReadSortingChoice(1);
+    switch (choice) {
+    case 1: {
+        PatientList* records = source.clone();
+        long comparisons = 0, links = 0;
+        if (algorithm == 1)
+            listBubbleSort(*records, key, ascending, comparisons, links);
+        else
+            listMergeSort(*records, key, ascending, comparisons, links);
+
+        cout << "\nALL RECORDS sorted by " << getKeyName(key)
+             << (ascending ? " (ascending):\n" : " (descending):\n");
+        records->displayAll(20);
+        delete records;
+        waitForEnter();
+        break;
+    }
+    case 0:
+        break;
+    }
+}
+
 inline void listSortingMenu(PatientList datasets[]) {
     int choice;
     do {
-        cout << "\n------ SORTING EXPERIMENTS [LINKED LIST] ------\n"
-             << "  1. Bubble Sort (show before/after)\n"
-             << "  2. Merge Sort  (show before/after)\n"
-             << "  3. Compare Bubble vs Merge\n"
+        cout << "\n";
+        printLine(50, '=');
+        cout << "   Sorting Experiments & Benchmark [LINKED LIST]\n";
+        printLine(50, '=');
+        cout << "  1. Bubble Sort (show before/after)\n"
+             << "  2. Merge Sort (show before/after)\n"
+             << "  3. Compare Bubble Sort vs Merge Sort\n"
              << "  4. Full benchmark (all datasets, all keys)\n"
-             << "  0. Back\n"
-             << "Choice: ";
-        choice = readInt();
+             << "  0. Back\n";
+        printLine(50, '=');
+        choice = listReadSortingChoice(4);
 
-        if (choice >= 1 && choice <= 3) {
-            cout << "\nDataset (1-3): ";
-            int d = readInt();
-            cout << "Sort by 1.Age  2.Length of Stay  3.Total Cost: ";
-            int key = readInt();
-            cout << "Order 1.Ascending  2.Descending: ";
-            bool asc = (readInt() != 2);
-            if (d < 1 || d > 3 || key < 1 || key > 3) {
-                cout << "Invalid input.\n";
-                continue;
-            }
+        switch (choice) {
+        case 1:
+        case 2:
+        case 3: {
+            cout << "\nSelect dataset:\n";
+            for (int d = 0; d < NUM_DATASETS; d++)
+                cout << "  " << (d + 1) << ". " << DATASET_NAMES[d] << "\n";
+            cout << "  0. Back\n";
+            int d = listReadSortingChoice(NUM_DATASETS);
+            if (d == 0) continue;
+
+            cout << "\nSelect sorting criterion:\n"
+                 << "  1. Age\n"
+                 << "  2. Visit Duration (Length of Stay)\n"
+                 << "  3. Total Medical Cost\n"
+                 << "  0. Back\n";
+            int key = listReadSortingChoice(3);
+            if (key == 0) continue;
+
+            cout << "\nSelect sorting order:\n"
+                 << "  1. Ascending\n"
+                 << "  2. Descending\n"
+                 << "  0. Back\n";
+            int order = listReadSortingChoice(2);
+            if (order == 0) continue;
+            bool asc = (order == 1);
             PatientList& data = datasets[d - 1];
 
             if (choice == 1 || choice == 2) {
@@ -278,6 +303,8 @@ inline void listSortingMenu(PatientList datasets[]) {
                 printListSortRow(choice == 1 ? "Bubble" : "Merge", key, r,
                                  data.memoryBytes());
                 printLine(112);
+                listViewAllSortedRecords(data, choice, key, asc);
+                continue;
             } else {
                 ListSortResult b = runListSort(data, 1, key, asc, false);
                 ListSortResult m = runListSort(data, 2, key, asc, false);
@@ -289,7 +316,9 @@ inline void listSortingMenu(PatientList datasets[]) {
                 printLine(112);
                 printSpeedup(b, m);
             }
-        } else if (choice == 4) {
+            break;
+        }
+        case 4: {
             cout << "\nFULL BENCHMARK [LINKED LIST] (ascending, average of "
                  << SORT_REPEAT << " runs)\n";
             printListSortHeader();
@@ -303,9 +332,12 @@ inline void listSortingMenu(PatientList datasets[]) {
                 }
             }
             printLine(112);
-        } else if (choice != 0) {
-            cout << "Invalid choice.\n";
+            break;
         }
+        case 0:
+            break;
+        }
+        if (choice != 0) waitForEnter();
     } while (choice != 0);
 }
 
