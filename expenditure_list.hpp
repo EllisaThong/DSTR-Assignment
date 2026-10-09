@@ -255,8 +255,8 @@ inline void displayTotalBillingPerDatasetList(const PatientList* const datasets[
     printLine(W, '=');
     cout << left << setw(40) << "Dataset"
         << right << setw(10) << "Patients"
-        << setw(20) << "Total Cost (MYR)"
-        << setw(16) << "Avg Cost (MYR)"
+        << setw(20) << "Total Cost (RM)"
+        << setw(16) << "Avg Cost (RM)"
         << setw(12) << "Share (%)" << "\n";
     printLine(W);
 
@@ -303,8 +303,8 @@ inline void displayCostByCareTypeList(const PatientList& data, const char* datas
 
     cout << left << setw(22) << "Care Type"
         << right << setw(10) << "Patients"
-        << setw(20) << "Total Cost (MYR)"
-        << setw(16) << "Avg Cost (MYR)"
+        << setw(20) << "Total Cost (RM)"
+        << setw(16) << "Avg Cost (RM)"
         << setw(12) << "Share (%)" << "\n";
     printLine(W);
 
@@ -337,8 +337,8 @@ inline void displayDatasetComparisonList(const PatientList* const datasets[NUM_D
     printLine(W, '=');
     cout << left << setw(14) << "Facility"
         << right << setw(10) << "Patients"
-        << setw(20) << "Total Cost (MYR)"
-        << setw(16) << "Avg Cost (MYR)"
+        << setw(20) << "Total Cost (RM)"
+        << setw(16) << "Avg Cost (RM)"
         << setw(14) << "Total Hours"
         << setw(14) << "Avg Stay (h)" << "\n";
     printLine(W);
@@ -390,7 +390,7 @@ inline void displayAgeGroupComparisonList(const PatientList* const datasets[NUM_
     cout << left << setw(12) << "Age Group"
         << setw(14) << "Facility"
         << right << setw(10) << "Patients"
-        << setw(18) << "Total Cost (MYR)"
+        << setw(18) << "Total Cost (RM)"
         << setw(14) << "Avg Cost"
         << setw(12) << "Avg Stay(h)" << "\n";
     printLine(W);
@@ -457,8 +457,8 @@ inline void displayClinicalInsightsReportList(const PatientList* const datasets[
         << setw(20) << "Preferred Care"
         << right << setw(10) << "Patients"
         << setw(10) << "Share(%)"
-        << setw(16) << "Total (MYR)"
-        << setw(13) << "Avg (MYR)" << "\n";
+        << setw(16) << "Total (RM)"
+        << setw(13) << "Avg (RM)" << "\n";
     printLine(W);
 
     for (int d = 0; d < NUM_DATASETS; d++) {
@@ -520,14 +520,14 @@ inline void displayClinicalInsightsReportList(const PatientList* const datasets[
     const LstAgeGroupStat& tc = combinedGroups[topCostGroup];
     cout << "1. Highest total billing age group  : " << AGE_GROUP_RANGES[topCostGroup]
         << " (" << AGE_GROUP_NAMES[topCostGroup] << ")\n"
-        << "   -> MYR " << tc.totalCost << "  ("
+        << "   -> RM " << tc.totalCost << "  ("
         << lstSafeDivide(tc.totalCost, grandTotal) * 100.0 << "% of all billing, "
         << tc.count << " patients)\n\n";
 
     const LstAgeGroupStat& ta = combinedGroups[topAvgGroup];
     cout << "2. Highest average cost per patient : " << AGE_GROUP_RANGES[topAvgGroup]
         << " (" << AGE_GROUP_NAMES[topAvgGroup] << ")\n"
-        << "   -> MYR " << lstSafeDivide(ta.totalCost, ta.count) << " per patient\n\n";
+        << "   -> RM " << lstSafeDivide(ta.totalCost, ta.count) << " per patient\n\n";
 
     cout << "3. Highest patient traffic care type:\n";
     for (int d = 0; d < NUM_DATASETS; d++) {
@@ -599,7 +599,7 @@ inline void displayClinicalInsightsReportList(const PatientList* const datasets[
             << lstSafeDivide(facilityCost[highBill], grandTotal) * 100.0
             << "% of all billing. " << LST_FACILITY_SHORT[target] << " also serves the "
             << AGE_GROUP_RANGES[topCostGroup] << " group\n"
-            << "   at MYR " << lstSafeDivide(lo.totalCost, lo.count) << " per patient vs MYR "
+            << "   at RM " << lstSafeDivide(lo.totalCost, lo.count) << " per patient vs RM "
             << lstSafeDivide(hi.totalCost, hi.count) << " at "
             << LST_FACILITY_SHORT[highBill] << ".\n"
             << "   Redirect stable follow-ups and routine checkups to "
